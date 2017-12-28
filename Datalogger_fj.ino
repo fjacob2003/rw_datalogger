@@ -151,6 +151,7 @@ String dht22_humidity;
 uint16_t lux;
 String bh_lux;
 float loop_dly;
+int rain;
 
 
 void setup() {
@@ -219,10 +220,10 @@ void loop() {
   readConsole();
   executeCommand();
 
-  int dly_sec=60;
+  int dly_sec=60;  
   int dly_min=10;
-  for (int j=0;j<= dly_min;j++) {      // dly_min
-     for (int i=0;i<= dly_sec;i++) {   //1 min
+  for (int j=1;j<= dly_min;j++) {      // dly_min
+     for (int i=1;i<= dly_sec;i++) {   //1 min
        delay(1000);                    //1 sec
      }
   }  
@@ -265,18 +266,18 @@ void printData(){
   Serial.print(t.min);
   Serial.print(" sec = ");
   Serial.print(t.sec);
-  Serial.print(" bmp280 temp x 100 = ");
+  Serial.print(" bmp280 temp = ");
   Serial.print(bmp280_temp);
   Serial.print(" bmp280 press = ");
   Serial.print(bmp280_press);
   Serial.print(" bmp280 alt = ");
   Serial.print(bmp280_alt);
-  Serial.print(" dht22 temp x 100 = ");
-  Serial.print(dht22_temp);
   Serial.print(" dht22 humidity = ");
   Serial.print(dht22_humidity);
   Serial.print(" bh1750 light = ");
   Serial.print(bh_lux);
+  Serial.print(" rain = ");
+  Serial.print(rain);
   Serial.println(" ");
 }
 
@@ -358,11 +359,13 @@ String readSensors() {
 
  
 
-  bmp280_temp=String(int(bmp.readTemperature()*100));   // bmp280 temperature in Celsius multiply by 100 to have decimals
+  bmp280_temp=String(float(bmp.readTemperature()));   // bmp280 temperature in Celsius 
   bmp280_press=String(long(bmp.readPressure()));        // bmp280 pressure in pascal.i need a long here, else truncated because int is 16 bits
   bmp280_alt=String(int(bmp.readAltitude(1013.25)));    // remove decimals altitude in meter
 
   sensors_event_t event;  
+  //this measure is not good
+  /*
   dht.temperature().getEvent(&event);
   if (isnan(event.temperature)) {
     Serial.println("Error reading temperature from DHT22");
@@ -370,18 +373,21 @@ String readSensors() {
   else {
     dht22_temp=String(int(event.temperature)*100);      // dht22 temperature in Celsius multiply by 100 to have decimals
   }
+  */
   dht.humidity().getEvent(&event);
   if (isnan(event.relative_humidity)) {
     Serial.println("Error reading humidity from DHT22");
   }
   else {
-    dht22_humidity=String(int(event.relative_humidity)*100);  // dht22 rel humidity multiply by 100 to have decimals
+    dht22_humidity=String(float(event.relative_humidity));  // dht22 rel humidity 
   }
 
   lux = lightMeter.readLightLevel();
   bh_lux = String(lux);
+
+  rain = analogRead(A7);
    
-  String dataString = bmp280_temp + '\t' + bmp280_press + '\t' + bmp280_alt + '\t' + dht22_temp + '\t' + dht22_humidity + '\t' + bh_lux ;
+  String dataString = bmp280_temp + '\t' + bmp280_press + '\t' + bmp280_alt + '\t' + dht22_humidity + '\t' + bh_lux + '\t' + rain ;
  
  
   return dataString;
