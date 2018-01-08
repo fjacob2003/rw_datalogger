@@ -69,6 +69,11 @@ bool received=false;
 int rc;
 int oldDayOfWeek;
 int curDayOfWeek;
+int curRwSensorValue = 0;
+int oldRwSensorValue = 0;
+int rwSensorPin=22; //red weevill detector pin
+int rwCount=0;
+int curRwCount=0;
 
 
   void    setup() {
@@ -134,7 +139,7 @@ int curDayOfWeek;
       for (int sec=1; sec<=60;sec++) {  //for 1mn 
         Serial.print(sec);
         Serial.print(" ");
-        delay(1000);       //delay 1s
+        curRwCount=readRwSensor();  //timed 1sec
         received = getCommandLineFromSerialPort(CommandLine);      //i need to probe for a command when in wait loop
         if (received) DoMyCommand(CommandLine);
         received = getCommandLineFromBT(CommandLine);    
@@ -143,6 +148,8 @@ int curDayOfWeek;
      Serial.println(" ");
    }
  }   
+
+
 
 
 int writeSampleToCurDayLog() {
@@ -170,6 +177,18 @@ int writeSampleToFullLog() {
     return 0; } else { return 99; }
 }
 
+int readRwSensor() {     //read red weevill detector, time this to last 1 second since this is replacing the loop 1 sec delay
+  for (int i=1;i <=1000; i++) {
+    curRwSensorValue = digitalRead(rwSensorPin);
+    if ((curRwSensorValue == 1) & (oldRwSensorValue == 0)) {
+      rwCount++;
+    }
+    delay(1);
+    oldRwSensorValue = curRwSensorValue;
+  }
+  return rwCount;
+}
+
 int writeDayToFullLog() {
   File dataFile = SD.open(fullLogName, FILE_WRITE);  //open log file 
   String dataString=String(t.year,DEC)+String(t.mon,DEC)+String(t.mday,DEC); //i need to write new day to full log
@@ -189,7 +208,7 @@ void printData(){
   Serial.print(" hour = ");           Serial.print(t.hour);           Serial.print(" min = ");            Serial.print(t.min);          Serial.print(" sec = ");            Serial.print(t.sec);
   Serial.print(" bmp280 temp = ");    Serial.print(bmp280_temp);      Serial.print(" bmp280 press = ");   Serial.print(bmp280_press);   Serial.print(" bmp280 alt = ");     Serial.print(bmp280_alt);
   Serial.print(" dht22 humidity = "); Serial.print(dht22_humidity);   Serial.print(" bh1750 light = ");   Serial.print(bh_lux);         Serial.print(" rain = ");           Serial.print(rain);
-  Serial.println(" ");
+  Serial.print(" RW count= ");        Serial.print(curRwCount);       Serial.println(" ");
 }
 
 
@@ -223,7 +242,7 @@ String readSensors() {
 
   rain = analogRead(A7);
    
-  String dataString = bmp280_temp + ',' + bmp280_press + ',' + bmp280_alt + ',' + dht22_humidity + ',' + bh_lux + ',' + rain ;
+  String dataString = bmp280_temp + ',' + bmp280_press + ',' + bmp280_alt + ',' + dht22_humidity + ',' + bh_lux + ',' + rain + ',' + curRwCount ;
  
   return dataString;
 }
